@@ -20,9 +20,15 @@ struct MockEmail: Identifiable {
     let attachments: [String]
 }
 
-// MARK: - Sample Data
-// Replace this with @Query over SwiftData when model is ready
 extension MockEmail {
+    // Loaded from emails.json + classified by CoreML
+    // Falls back to hardcoded samples if loading fails
+    static let loaded: [MockEmail] = {
+        let emails = EmailLoader.loadEmails()
+        return emails.isEmpty ? MockEmail.samples : emails
+    }()
+
+    // Hardcoded fallback samples
     static let samples: [MockEmail] = [
         MockEmail(
             senderName: "PayPal Support",

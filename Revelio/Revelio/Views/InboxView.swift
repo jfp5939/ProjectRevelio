@@ -19,9 +19,10 @@ struct InboxView: View {
     @State private var searchQuery: String = ""
     @State private var showSearch: Bool = false
     @FocusState private var searchFocused: Bool
+    @State private var emails: [MockEmail] = []
 
     // Swap MockEmail.samples for @Query when SwiftData is ready
-    let emails: [MockEmail] = MockEmail.samples
+    //let emails: [MockEmail] = MockEmail.samples
 
     var filteredEmails: [MockEmail] {
         emails.filter { email in
@@ -177,6 +178,14 @@ struct InboxView: View {
                 Button("Safe") { filterOption = .safe }
                 Button("Unsafe") { filterOption = .unsafe }
                 Button("Cancel", role: .cancel) {}
+            }
+            .onAppear {
+                Task {
+                    let loaded = await Task.detached(priority: .userInitiated) {
+                        EmailLoader.loadEmails()
+                    }.value
+                    emails = loaded.isEmpty ? MockEmail.samples : loaded
+                }
             }
         }
         .navigationBarBackButtonHidden(true)
