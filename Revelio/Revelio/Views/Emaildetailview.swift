@@ -158,7 +158,7 @@ struct EmailDetailView: View {
                         }
 
                         // Open in Sandbox
-                        NavigationLink(destination: SandboxView()) {
+                        NavigationLink(destination: SandboxView(email: email)) {
                             HStack(spacing: 6) {
                                 Text("Sandbox")
                                     .font(.subheadline.bold())
@@ -183,7 +183,7 @@ struct EmailDetailView: View {
         .navigationTitle(email.senderName)
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showRiskBreakdown) {
-            RiskBreakdownSheet()
+            RiskBreakdownSheet(email: email)
         }
     }
 }

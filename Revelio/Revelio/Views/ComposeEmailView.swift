@@ -113,7 +113,17 @@ struct ComposeEmailView: View {
             .padding()
         }
         .sheet(isPresented: $showRiskBreakdown) {
-            RiskBreakdownSheet()
+            RiskBreakdownSheet(email: MockEmail(
+                senderName: "Me",
+                senderEmail: "your@email.com",
+                senderInitial: "M",
+                subject: subjectField,
+                body: bodyField,
+                time: "",
+                isPhishing: EmailLoader.classify(subject: subjectField, body: bodyField),
+                links: [],
+                attachments: []
+            ))
         }
     }
 }

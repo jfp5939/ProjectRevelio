@@ -70,7 +70,8 @@ struct SandboxView: View {
     @State private var showWebSheet = false
     @State private var selectedURL: String = ""
 
-    let linkURL = "http://paypa1-verify.com/login"
+    let email: MockEmail
+    //let linkURL = "http://paypa1-verify.com/login"
 
     var body: some View {
         ZStack {
@@ -94,23 +95,23 @@ struct SandboxView: View {
                         VStack(alignment: .leading, spacing: 10) {
                             SandboxCardHeader(icon: "envelope.fill", title: "Email Details")
 
-                            SandboxDetailRow(label: "From", value: "support@paypa1-verify.com", valueColor: .red)
+                            SandboxDetailRow(label: "From", value: email.senderEmail, valueColor: email.isPhishing ? .red : .black)
                             Divider()
                             SandboxDetailRow(label: "To", value: "your@email.com")
                             Divider()
-                            SandboxDetailRow(label: "Subject", value: "Urgent: Verify your account now")
+                            SandboxDetailRow(label: "Subject", value: email.subject)
                             Divider()
                             HStack {
                                 Text("Risk")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Text("unsafe")
+                                Text(email.isPhishing ? "unsafe" : "safe")
                                     .font(.caption.bold())
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
-                                    .background(Capsule().fill(Color.red.opacity(0.8)))
+                                    .background(Capsule().fill(email.isPhishing ? Color.red.opacity(0.8) : Color.green.opacity(0.8)))
                             }
                         }
                     }
@@ -119,68 +120,76 @@ struct SandboxView: View {
                     SandboxCard {
                         VStack(alignment: .leading, spacing: 8) {
                             SandboxCardHeader(icon: "doc.text", title: "Body")
-                            Text("Dear Customer, your account has been suspended. Click the link below to verify your identity immediately or your account will be closed.")
+                            Text(email.body)
                                 .font(.subheadline)
                                 .foregroundColor(.black.opacity(0.8))
                                 .lineSpacing(4)
                         }
                     }
 
-                    // Links Card
-                    SandboxCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            SandboxCardHeader(icon: "link", title: "Links")
-
-                            HStack(spacing: 10) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
-                                    .font(.subheadline)
-
-                                Text(linkURL)
-                                    .font(.caption)
-                                    .foregroundColor(.blue)
-                                    .lineLimit(1)
-                                    .truncationMode(.middle)
-
-                                Spacer()
-
-                                Button {
-                                    selectedURL = linkURL
-                                    showWebSheet = true
-                                } label: {
-                                    Text("Open safely")
-                                        .font(.caption.bold())
-                                        .foregroundColor(.black)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Capsule().fill(Color.yellow.opacity(0.7)))
+                    if !email.links.isEmpty {
+                        // Links Card
+                        SandboxCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                SandboxCardHeader(icon: "link", title: "Links")
+                                
+                                ForEach(email.links, id: \.self){ link in
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.orange)
+                                            .font(.subheadline)
+                                        
+                                        Text(link)
+                                            .font(.caption)
+                                            .foregroundColor(.blue)
+                                            .lineLimit(1)
+                                            .truncationMode(.middle)
+                                        
+                                        Spacer()
+                                        
+                                        Button {
+                                            selectedURL = link
+                                            showWebSheet = true
+                                        } label: {
+                                            Text("Open safely")
+                                                .font(.caption.bold())
+                                                .foregroundColor(.black)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Capsule().fill(Color.yellow.opacity(0.7)))
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
 
-                    // Attachments Card
-                    SandboxCard {
-                        VStack(alignment: .leading, spacing: 10) {
-                            SandboxCardHeader(icon: "paperclip", title: "Attachments")
-
-                            HStack(spacing: 10) {
-                                Image(systemName: "doc.fill")
-                                    .foregroundColor(.secondary)
-                                    .font(.subheadline)
-
-                                Text("invoice.exe")
-                                    .font(.subheadline)
-                                    .foregroundColor(.black)
-
-                                Spacer()
-
-                                Text("blocked")
-                                    .font(.caption.bold())
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 4)
-                                    .background(Capsule().fill(Color.red.opacity(0.8)))
+                    if !email.attachments.isEmpty{
+                        // Attachments Card
+                        SandboxCard {
+                            VStack(alignment: .leading, spacing: 10) {
+                                SandboxCardHeader(icon: "paperclip", title: "Attachments")
+                                
+                                ForEach(email.attachments, id: \.self){ attachment in
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "doc.fill")
+                                            .foregroundColor(.secondary)
+                                            .font(.subheadline)
+                                        
+                                        Text(attachment)
+                                            .font(.subheadline)
+                                            .foregroundColor(.black)
+                                        
+                                        Spacer()
+                                        
+                                        Text(email.isPhishing ? "blocked" : "unblocked")
+                                            .font(.caption.bold())
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 10)
+                                            .padding(.vertical, 4)
+                                            .background(Capsule().fill(email.isPhishing ? Color.red.opacity(0.8) : Color.green.opacity(0.8)))
+                                    }
+                                }
                             }
                         }
                     }
@@ -209,7 +218,7 @@ struct SandboxView: View {
             }
         }
         .sheet(isPresented: $showRiskBreakdown) {
-            RiskBreakdownSheet()
+            RiskBreakdownSheet(email: email)
         }
         .sheet(isPresented: $showWebSheet) {
             SandboxWebSheet(urlString: selectedURL)
@@ -272,74 +281,8 @@ struct SandboxDetailRow: View {
     }
 }
 
-// MARK: - Risk Breakdown Sheet
-struct RiskBreakdownSheet: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Risk Breakdown")
-                .font(.largeTitle.bold())
-                .padding(.top, 8)
 
-            Divider()
-
-            RiskFactor(
-                icon: "exclamationmark.triangle",
-                label: "Suspicious sender domain",
-                detail: "paypa1-verify.com mimics a legitimate domain"
-            )
-            RiskFactor(
-                icon: "link",
-                label: "Link mismatch",
-                detail: "Display text does not match the actual URL"
-            )
-            RiskFactor(
-                icon: "text.quote",
-                label: "Urgency keywords detected",
-                detail: "Words like 'urgent' and 'immediately' are common phishing signals"
-            )
-            RiskFactor(
-                icon: "doc.badge.exclamationmark",
-                label: "Executable attachment",
-                detail: "invoice.exe is a blocked file type"
-            )
-
-            Spacer()
-        }
-        .padding()
-    }
-}
-
-// MARK: - Risk Factor Row
-struct RiskFactor: View {
-    let icon: String
-    let label: String
-    let detail: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .foregroundColor(.red)
-                .frame(width: 24)
-                .padding(.top, 2)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(label)
-                    .font(.headline)
-                    .foregroundColor(.black)
-                Text(detail)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineSpacing(3)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color.red.opacity(0.06))
-        )
-    }
-}
 
 #Preview {
-    SandboxView()
+    SandboxView(email: MockEmail.samples[1])
 }

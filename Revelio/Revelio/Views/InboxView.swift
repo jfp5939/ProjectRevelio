@@ -145,15 +145,17 @@ struct InboxView: View {
 
                         // Email list
                         if filteredEmails.isEmpty {
-                            VStack(spacing: 8) {
-                                Image(systemName: "tray")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.secondary)
-                                Text("No emails found")
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.top, 60)
+//                            VStack(spacing: 8) {
+//                                Image(systemName: "tray")
+//                                    .font(.system(size: 40))
+//                                    .foregroundColor(.secondary)
+//                                Text("No emails found")
+//                                    .font(.subheadline)
+//                                    .foregroundColor(.secondary)
+//                            }
+//                            .padding(.top, 60)
+                            ProgressView("Loading emails...")
+                                    .padding(.top, 60)
                         } else {
                             ForEach(filteredEmails) { email in
                                 NavigationLink(destination: EmailDetailView(email: email)) {
@@ -184,7 +186,16 @@ struct InboxView: View {
                     let loaded = await Task.detached(priority: .userInitiated) {
                         EmailLoader.loadEmails()
                     }.value
-                    emails = loaded.isEmpty ? MockEmail.samples : loaded
+                    
+                    let allEmails = loaded.isEmpty ? MockEmail.samples : loaded
+                    
+                    // Guarantee at least 1 safe and 1 unsafe
+                    let phishing = allEmails.filter { $0.isPhishing }.shuffled()
+                    let benign = allEmails.filter { !$0.isPhishing }.shuffled()
+                    
+                    // Take up to 10 from each, then mix and shuffle
+                    let combined = Array(phishing.prefix(10) + benign.prefix(10))
+                    emails = combined.shuffled().prefix(20).map { $0 }
                 }
             }
         }
@@ -264,7 +275,7 @@ struct EmailRowView: View {
                         }
 
                         // Open in Sandbox
-                        NavigationLink(destination: SandboxView()) {
+                        NavigationLink(destination: SandboxView(email: email)) {
                             Image(systemName: "lock.square")
                                 .font(.title3)
                                 .foregroundColor(.white)
@@ -279,7 +290,7 @@ struct EmailRowView: View {
             }
         }
         .sheet(isPresented: $showRiskBreakdown) {
-            RiskBreakdownSheet()
+            RiskBreakdownSheet(email: email)
         }
     }
 }

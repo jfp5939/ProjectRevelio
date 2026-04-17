@@ -81,8 +81,8 @@ struct EmailLoader {
             // Extract a simple time string from date if available
             let time: String = {
                 let parts = date.components(separatedBy: " ")
-                if parts.count >= 2 {
-                    let timeParts = parts[1].components(separatedBy: ":")
+                if parts.count >= 5 {
+                    let timeParts = parts[4].components(separatedBy: ":")
                     if timeParts.count >= 2 {
                         return "\(timeParts[0]):\(timeParts[1])"
                     }
