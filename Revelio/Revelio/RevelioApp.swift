@@ -9,9 +9,18 @@ import SwiftUI
 
 @main
 struct RevelioApp: App {
+    @State private var emails: [MockEmail] = MockEmail.samples
     var body: some Scene {
         WindowGroup {
-            MainView()
+            MainView(emails: $emails)
+                .task {
+                        let loaded = await Task.detached(priority: .userInitiated) {
+                            EmailLoader.loadEmails()
+                        }.value
+                        if !loaded.isEmpty {
+                            emails = loaded
+                        }
+                    }
         }
     }
 }

@@ -1,10 +1,3 @@
-//
-//  SandboxView.swift
-//  Revelio
-//
-//  Created by Jiya Patel on 4/6/26.
-//
-
 import SwiftUI
 import WebKit
 
@@ -14,8 +7,9 @@ struct SafeWebView: UIViewRepresentable {
 
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        // Disable JS to reduce risk from malicious pages
-        config.preferences.javaScriptEnabled = false
+        let pagePrefs = WKWebpagePreferences()
+        pagePrefs.allowsContentJavaScript = false
+        config.defaultWebpagePreferences = pagePrefs
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.load(URLRequest(url: url))
         return webView
@@ -32,7 +26,6 @@ struct SandboxWebSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Warning Banner
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.shield.fill")
                         .foregroundColor(.orange)
@@ -64,16 +57,184 @@ struct SandboxWebSheet: View {
     }
 }
 
-// MARK: - Sandbox View
-struct SandboxView: View {
-    @State private var showRiskBreakdown = false
-    @State private var showWebSheet = false
-    @State private var selectedURL: String = ""
-
-    let email: MockEmail
-    //let linkURL = "http://paypa1-verify.com/login"
+// MARK: - Attachment Preview Sheet
+struct AttachmentPreviewSheet: View {
+    let assetName: String
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        NavigationStack {
+            VStack {
+//                Image("friday_lunch_spots")
+//                    .resizable()
+//                    .scaledToFit()
+//                    .padding()
+                if UIImage(named: assetName) != nil {
+                    Image(assetName)
+                        .resizable()
+                        .scaledToFit()
+                        .padding()
+                } else {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        Image(systemName: "doc.fill")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("Preview not available")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }
+            }
+            .navigationTitle(assetName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Close") { dismiss() }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Attachment Helper
+struct AttachmentInfo {
+    let filename: String
+    let isBlocked: Bool
+    let fileType: String
+    let simulatedSize: String
+    let icon: String
+
+    static let blockedExtensions = [".exe", ".sh", ".dmg", ".bat", ".js", ".py", ".rb", ".pl"]
+    static let safeExtensions: [String: (icon: String, type: String)] = [
+        ".pdf": ("doc.richtext", "PDF Document"),
+        ".txt": ("doc.text", "Plain Text"),
+        ".docx": ("doc.fill", "Word Document"),
+        ".xlsx": ("tablecells", "Spreadsheet"),
+        ".jpg": ("photo", "JPEG Image"),
+        ".png": ("photo", "PNG Image"),
+        ".zip": ("archivebox", "ZIP Archive")
+    ]
+
+    // Asset name is filename without extension
+    var assetName: String {
+        let parts = filename.components(separatedBy: ".")
+        let result = parts.dropLast().joined(separator: ".")
+        return result
+    }
+
+    init(filename: String) {
+        self.filename = filename
+        let lower = filename.lowercased()
+        let ext = "." + (lower.components(separatedBy: ".").last ?? "")
+        self.isBlocked = AttachmentInfo.blockedExtensions.contains(ext)
+
+        if let safe = AttachmentInfo.safeExtensions[ext] {
+            self.icon = safe.icon
+            self.fileType = safe.type
+        } else if self.isBlocked {
+            self.icon = "exclamationmark.triangle.fill"
+            self.fileType = "\(ext.uppercased().dropFirst()) File — Executable"
+        } else {
+            self.icon = "doc.fill"
+            self.fileType = "Unknown File"
+        }
+
+        let sizes = ["12 KB", "48 KB", "256 KB", "1.2 MB", "3.4 MB"]
+        self.simulatedSize = sizes[abs(filename.hashValue) % sizes.count]
+    }
+}
+
+// MARK: - Attachment Row
+struct AttachmentRow: View {
+    let info: AttachmentInfo
+    let onPreviewTapped: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Image(systemName: info.icon)
+                    .foregroundColor(info.isBlocked ? .red : .teal)
+                    .font(.title3)
+                    .frame(width: 28)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(info.filename)
+                        .font(.subheadline.bold())
+                        .foregroundColor(.black)
+                    Text(info.fileType)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                if info.isBlocked {
+                    Text("blocked")
+                        .font(.caption.bold())
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(Color.red.opacity(0.8)))
+                } else {
+                    Button {
+                        onPreviewTapped(info.assetName)
+                    } label: {
+                        Text("Preview")
+                            .font(.caption.bold())
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Capsule().fill(Color.teal.opacity(0.25)))
+                    }
+                }
+            }
+
+            // Metadata
+            if !info.isBlocked {
+                HStack(spacing: 16) {
+                    Label("Size: \(info.simulatedSize)", systemImage: "externaldrive")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    Label(info.fileType, systemImage: "tag")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.leading, 38)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.shield")
+                        .font(.caption2)
+                        .foregroundColor(.red.opacity(0.7))
+                    Text("This file type can execute code and has been blocked for your safety.")
+                        .font(.caption2)
+                        .foregroundColor(.red.opacity(0.7))
+                }
+                .padding(.leading, 38)
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 10)
+                .fill(info.isBlocked ? Color.red.opacity(0.05) : Color.teal.opacity(0.05))
+        )
+    }
+}
+
+// MARK: - Sandbox View
+struct SandboxView: View {
+    
+    @State private var showRiskBreakdown = false
+    @State private var showWebSheet = false
+    @State private var showAttachmentSheet = false
+    @State private var selectedURL: String = ""
+    @State private var selectedAssetName: String? = nil
+
+    let email: MockEmail
+
+    var body: some View {
+        
         ZStack {
             LinearGradient(
                 colors: [.teal.opacity(0.5), .yellow.opacity(0.5)],
@@ -84,7 +245,6 @@ struct SandboxView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 16) {
 
-                    // Title
                     Text("Sandbox View")
                         .font(.largeTitle.bold())
                         .frame(maxWidth: .infinity, alignment: .center)
@@ -94,7 +254,6 @@ struct SandboxView: View {
                     SandboxCard {
                         VStack(alignment: .leading, spacing: 10) {
                             SandboxCardHeader(icon: "envelope.fill", title: "Email Details")
-
                             SandboxDetailRow(label: "From", value: email.senderEmail, valueColor: email.isPhishing ? .red : .black)
                             Divider()
                             SandboxDetailRow(label: "To", value: "your@email.com")
@@ -127,26 +286,22 @@ struct SandboxView: View {
                         }
                     }
 
+                    // Links Card
                     if !email.links.isEmpty {
-                        // Links Card
                         SandboxCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 SandboxCardHeader(icon: "link", title: "Links")
-                                
-                                ForEach(email.links, id: \.self){ link in
+                                ForEach(email.links, id: \.self) { link in
                                     HStack(spacing: 10) {
                                         Image(systemName: "exclamationmark.triangle.fill")
                                             .foregroundColor(.orange)
                                             .font(.subheadline)
-                                        
                                         Text(link)
                                             .font(.caption)
                                             .foregroundColor(.blue)
                                             .lineLimit(1)
                                             .truncationMode(.middle)
-                                        
                                         Spacer()
-                                        
                                         Button {
                                             selectedURL = link
                                             showWebSheet = true
@@ -164,30 +319,17 @@ struct SandboxView: View {
                         }
                     }
 
-                    if !email.attachments.isEmpty{
-                        // Attachments Card
+                    // Attachments Card
+                    if !email.attachments.isEmpty {
                         SandboxCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 SandboxCardHeader(icon: "paperclip", title: "Attachments")
-                                
-                                ForEach(email.attachments, id: \.self){ attachment in
-                                    HStack(spacing: 10) {
-                                        Image(systemName: "doc.fill")
-                                            .foregroundColor(.secondary)
-                                            .font(.subheadline)
-                                        
-                                        Text(attachment)
-                                            .font(.subheadline)
-                                            .foregroundColor(.black)
-                                        
-                                        Spacer()
-                                        
-                                        Text(email.isPhishing ? "blocked" : "unblocked")
-                                            .font(.caption.bold())
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 10)
-                                            .padding(.vertical, 4)
-                                            .background(Capsule().fill(email.isPhishing ? Color.red.opacity(0.8) : Color.green.opacity(0.8)))
+                                ForEach(email.attachments, id: \.self) { attachment in
+                                    AttachmentRow(info: AttachmentInfo(filename: attachment)) { assetName in
+                                        selectedAssetName = assetName
+                                    }
+                                    if attachment != email.attachments.last {
+                                        Divider()
                                     }
                                 }
                             }
@@ -222,6 +364,9 @@ struct SandboxView: View {
         }
         .sheet(isPresented: $showWebSheet) {
             SandboxWebSheet(urlString: selectedURL)
+        }
+        .sheet(item: $selectedAssetName) { name in
+            AttachmentPreviewSheet(assetName: name)
         }
     }
 }
@@ -281,8 +426,10 @@ struct SandboxDetailRow: View {
     }
 }
 
-
-
 #Preview {
-    SandboxView(email: MockEmail.samples[1])
+    SandboxView(email: MockEmail.samples[0])
+}
+
+extension String: @retroactive Identifiable {
+    public var id: String { self }
 }

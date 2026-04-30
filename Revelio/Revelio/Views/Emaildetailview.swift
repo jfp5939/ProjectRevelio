@@ -1,15 +1,9 @@
-//
-//  Emaildetailview.swift
-//  Revelio
-//
-//  Created by Jiya Patel on 4/14/26.
-//
-
 import SwiftUI
 
 struct EmailDetailView: View {
     let email: MockEmail
     @State private var showRiskBreakdown = false
+    @State private var selectedAssetName: String? = nil
 
     var accentColor: Color { email.isPhishing ? .red : .green }
 
@@ -27,7 +21,6 @@ struct EmailDetailView: View {
                     // Sender Header Card
                     SandboxCard {
                         HStack(spacing: 14) {
-                            // Avatar
                             ZStack {
                                 Circle()
                                     .fill(accentColor.opacity(0.2))
@@ -51,7 +44,6 @@ struct EmailDetailView: View {
 
                             Spacer()
 
-                            // Risk badge
                             Text(email.isPhishing ? "unsafe" : "safe")
                                 .font(.caption.bold())
                                 .foregroundColor(.white)
@@ -71,7 +63,7 @@ struct EmailDetailView: View {
                         }
                     }
 
-                    // Body Card — plain reading, no interaction
+                    // Body Card
                     SandboxCard {
                         VStack(alignment: .leading, spacing: 8) {
                             SandboxCardHeader(icon: "doc.text", title: "Body")
@@ -82,25 +74,41 @@ struct EmailDetailView: View {
                         }
                     }
 
-                    // Links Card — displayed as plain unclickable text
+                    // Links Card — interactive, opens in Safari
                     if !email.links.isEmpty {
                         SandboxCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 SandboxCardHeader(icon: "link", title: "Links")
-                                Text("Open in Sandbox to interact with links safely.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+
+                                if email.isPhishing {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.caption)
+                                            .foregroundColor(.orange)
+                                        Text("These links may be dangerous. Open in Sandbox for safe inspection.")
+                                            .font(.caption)
+                                            .foregroundColor(.orange)
+                                    }
                                     .padding(.bottom, 2)
+                                }
+
                                 ForEach(email.links, id: \.self) { link in
                                     HStack(spacing: 8) {
-                                        Image(systemName: "minus.circle")
+                                        Image(systemName: "link.circle")
                                             .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        Text(link)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                            .lineLimit(1)
-                                            .truncationMode(.middle)
+                                            .foregroundColor(accentColor)
+                                        if let url = URL(string: link) {
+                                            Link(link, destination: url)
+                                                .font(.caption)
+                                                .lineLimit(1)
+                                                .truncationMode(.middle)
+                                        } else {
+                                            Text(link)
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                                .lineLimit(1)
+                                                .truncationMode(.middle)
+                                        }
                                     }
                                     if link != email.links.last {
                                         Divider()
@@ -110,23 +118,55 @@ struct EmailDetailView: View {
                         }
                     }
 
-                    // Attachments Card — listed by name only, no interaction
+                    // Attachments Card — interactive, preview available
                     if !email.attachments.isEmpty {
                         SandboxCard {
                             VStack(alignment: .leading, spacing: 10) {
                                 SandboxCardHeader(icon: "paperclip", title: "Attachments")
-                                Text("Open in Sandbox to inspect attachments safely.")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+
+                                if email.isPhishing {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.caption)
+                                            .foregroundColor(.orange)
+                                        Text("Some attachments may be dangerous. Open in Sandbox to inspect safely.")
+                                            .font(.caption)
+                                            .foregroundColor(.orange)
+                                    }
                                     .padding(.bottom, 2)
+                                }
+
                                 ForEach(email.attachments, id: \.self) { attachment in
-                                    HStack(spacing: 8) {
-                                        Image(systemName: "doc")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                        Text(attachment)
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
+                                    let info = AttachmentInfo(filename: attachment)
+                                    HStack(spacing: 10) {
+                                        Image(systemName: info.icon)
+                                            .foregroundColor(info.isBlocked ? .red : .teal)
+                                            .font(.subheadline)
+                                            .frame(width: 24)
+
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text(attachment)
+                                                .font(.subheadline)
+                                                .foregroundColor(.black)
+                                            Text(info.fileType)
+                                                .font(.caption2)
+                                                .foregroundColor(.secondary)
+                                        }
+
+                                        Spacer()
+
+                                        // Always allow open in detail view
+                                        Button {
+                                            selectedAssetName = info.assetName
+                                            //showAttachmentSheet = true
+                                        } label: {
+                                            Text("Open")
+                                                .font(.caption.bold())
+                                                .foregroundColor(.black)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 6)
+                                                .background(Capsule().fill(accentColor.opacity(0.25)))
+                                        }
                                     }
                                     if attachment != email.attachments.last {
                                         Divider()
@@ -138,7 +178,6 @@ struct EmailDetailView: View {
 
                     // Action Buttons
                     HStack(spacing: 12) {
-                        // Risk Breakdown
                         Button {
                             showRiskBreakdown = true
                         } label: {
@@ -157,7 +196,6 @@ struct EmailDetailView: View {
                             )
                         }
 
-                        // Open in Sandbox
                         NavigationLink(destination: SandboxView(email: email)) {
                             HStack(spacing: 6) {
                                 Text("Sandbox")
@@ -184,6 +222,9 @@ struct EmailDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showRiskBreakdown) {
             RiskBreakdownSheet(email: email)
+        }
+        .sheet(item: $selectedAssetName) { name in
+            AttachmentPreviewSheet(assetName: name)
         }
     }
 }

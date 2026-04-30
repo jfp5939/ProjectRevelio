@@ -16,7 +16,8 @@ struct EmailLoader {
         // Try to split "Name <email>" format
         if let openBracket = sender.firstIndex(of: "<"),
            let closeBracket = sender.firstIndex(of: ">") {
-            let name = String(sender[sender.startIndex..<openBracket]).trimmingCharacters(in: .whitespaces)
+            let nameUntrimmed = String(sender[sender.startIndex..<openBracket]).trimmingCharacters(in: .whitespaces)
+            let name = nameUntrimmed.trimmingCharacters(in: CharacterSet(charactersIn: "\""))
             let email = String(sender[sender.index(after: openBracket)..<closeBracket]).trimmingCharacters(in: .whitespaces)
             let initial = String(name.prefix(1)).uppercased()
             return (name.isEmpty ? email : name, email, initial.isEmpty ? "?" : initial)
@@ -82,9 +83,11 @@ struct EmailLoader {
             let time: String = {
                 let parts = date.components(separatedBy: " ")
                 if parts.count >= 5 {
+                    let day = parts[1]
+                    let month = parts[2]
                     let timeParts = parts[4].components(separatedBy: ":")
                     if timeParts.count >= 2 {
-                        return "\(timeParts[0]):\(timeParts[1])"
+                        return "\(day) \(month) \(timeParts[0]):\(timeParts[1])"
                     }
                 }
                 return "—"
@@ -98,8 +101,8 @@ struct EmailLoader {
                 body: body,
                 time: time,
                 isPhishing: isPhishing,
-                links: hasUrls ? ["URL detected — open in sandbox to inspect"] : [],
-                attachments: []
+                links: dict["links"] as? [String] ?? [],
+                attachments: dict["attachments"] as? [String] ?? []
             )
         }
     }

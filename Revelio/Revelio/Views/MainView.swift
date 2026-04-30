@@ -14,7 +14,8 @@ enum AppTab {
 struct MainView: View {
     @State private var currentTab: AppTab = .inbox
     @State private var showSidebar: Bool = false
- 
+    //let emails: [MockEmail]
+    @Binding var emails: [MockEmail]
     var body: some View {
         ZStack(alignment: .leading) {
  
@@ -23,7 +24,7 @@ struct MainView: View {
             Group {
                 switch currentTab {
                 case .inbox:
-                    InboxView(showSidebar: $showSidebar)
+                    InboxView(showSidebar: $showSidebar, emails: $emails)
                 case .dashboard:
                     DashboardView(showSidebar: $showSidebar)
                 case .settings:
@@ -53,5 +54,5 @@ struct MainView: View {
  
 
 #Preview {
-    MainView()
+    //MainView()
 }
