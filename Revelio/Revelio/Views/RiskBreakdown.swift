@@ -40,7 +40,7 @@ struct RiskAnalyzer {
                 for ext in executableExtensions {
                     if attachment.lowercased().hasSuffix(ext) {
                         signals.append(RiskSignal(
-                            icon: "doc.badge.exclamationmark",
+                            icon: "paperclip",
                             label: "Executable attachment: \(attachment)",
                             detail: "Files with extension '\(ext)' are blocked — they may contain malware."
                         ))

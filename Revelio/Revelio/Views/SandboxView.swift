@@ -1,3 +1,9 @@
+//
+//  SandboxView.swift
+//  Revelio
+//
+//  Created by Jiya Patel on 4/6/26.
+//
 import SwiftUI
 import WebKit
 
@@ -226,10 +232,11 @@ struct AttachmentRow: View {
 struct SandboxView: View {
     
     @State private var showRiskBreakdown = false
-    @State private var showWebSheet = false
+    //@State private var showWebSheet = false
     @State private var showAttachmentSheet = false
-    @State private var selectedURL: String = ""
+    //@State private var selectedURL: String = ""
     @State private var selectedAssetName: String? = nil
+    @State private var selectedURL: String? = nil
 
     let email: MockEmail
 
@@ -304,7 +311,7 @@ struct SandboxView: View {
                                         Spacer()
                                         Button {
                                             selectedURL = link
-                                            showWebSheet = true
+                                            //showWebSheet = true
                                         } label: {
                                             Text("Open safely")
                                                 .font(.caption.bold())
@@ -362,8 +369,8 @@ struct SandboxView: View {
         .sheet(isPresented: $showRiskBreakdown) {
             RiskBreakdownSheet(email: email)
         }
-        .sheet(isPresented: $showWebSheet) {
-            SandboxWebSheet(urlString: selectedURL)
+        .sheet(item: $selectedURL) { url in
+            SandboxWebSheet(urlString: url)
         }
         .sheet(item: $selectedAssetName) { name in
             AttachmentPreviewSheet(assetName: name)

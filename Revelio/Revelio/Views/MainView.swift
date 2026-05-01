@@ -26,7 +26,7 @@ struct MainView: View {
                 case .inbox:
                     InboxView(showSidebar: $showSidebar, emails: $emails)
                 case .dashboard:
-                    DashboardView(showSidebar: $showSidebar)
+                    DashboardView(showSidebar: $showSidebar, emails: $emails)
                 case .settings:
                     SettingsView(showSidebar: $showSidebar)
                 }

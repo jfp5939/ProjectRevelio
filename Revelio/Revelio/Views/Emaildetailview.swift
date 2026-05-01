@@ -1,3 +1,9 @@
+//
+//  EmaildetailView.swift
+//  Revelio
+//
+//  Created by Jiya Patel on 4/6/26.
+//
 import SwiftUI
 
 struct EmailDetailView: View {
