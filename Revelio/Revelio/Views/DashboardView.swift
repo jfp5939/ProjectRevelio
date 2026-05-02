@@ -10,7 +10,7 @@ import Charts
 
 struct DashboardView: View {
     @Binding var showSidebar: Bool
-    @Binding var emails: [MockEmail]
+    let emails: [MockEmail]
 
     // MARK: - Computed Stats
 

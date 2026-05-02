@@ -14,6 +14,8 @@ struct ComposeEmailView: View {
     @State private var subjectField: String = ""
     @State private var bodyField: String = ""
     @State private var showRiskBreakdown: Bool = false
+    @Binding var sentEmails: [MockEmail]
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 0) {
@@ -93,7 +95,33 @@ struct ComposeEmailView: View {
 
                 // Send button
                 Button {
-                    // send action — wire up later
+                    // send action
+                    // Derive recipient info from toField
+                    let recipientEmail = toField.trimmingCharacters(in: .whitespaces)
+                    let recipientName = recipientEmail.components(separatedBy: "@").first ?? "Unknown"
+                    let recipientInitial = String(recipientName.prefix(1)).uppercased()
+                    
+                    let newEmail = MockEmail(
+                            senderName: recipientName,
+                            senderEmail: recipientEmail,
+                            senderInitial: recipientInitial,
+                            subject: subjectField,
+                            body: bodyField,
+                            time: {
+                                let now = Date()
+                                let formatter = DateFormatter()
+                                formatter.dateFormat = "dd MMM HH:mm"
+                                return formatter.string(from: now)
+                            }(),
+                            isPhishing: EmailLoader.classify(
+                                subject: subjectField,
+                                body: bodyField
+                            ),
+                            links: [],
+                            attachments: []
+                        )
+                        sentEmails.append(newEmail)
+                        dismiss()
                 } label: {
                     HStack(spacing: 6) {
                         Text("Send")
@@ -147,8 +175,4 @@ struct ComposeFieldRow: View {
         .padding(.horizontal)
         .padding(.vertical, 10)
     }
-}
-
-#Preview {
-    ComposeEmailView()
 }

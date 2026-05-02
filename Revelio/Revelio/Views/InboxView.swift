@@ -21,6 +21,7 @@ struct InboxView: View {
     @FocusState private var searchFocused: Bool
     //@State private var emails: [MockEmail] = []
     @Binding var emails: [MockEmail]
+    @Binding var sentEmails: [MockEmail]
     // Swap MockEmail.samples for @Query when SwiftData is ready
     //let emails: [MockEmail] = MockEmail.samples
 
@@ -173,7 +174,7 @@ struct InboxView: View {
                 }
             }
             .sheet(isPresented: $showCompose) {
-                ComposeEmailView()
+                ComposeEmailView(sentEmails: $sentEmails)
             }
             .confirmationDialog("Filter Emails", isPresented: $showFilter, titleVisibility: .visible) {
                 Button("All") { filterOption = .all }

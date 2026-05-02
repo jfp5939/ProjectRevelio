@@ -5,53 +5,6 @@
 //  Created by Jiya Patel on 4/6/26.
 //
 
-//import SwiftUI
-//
-//struct SideBarView: View {
-//    var body: some View {
-//        ZStack{
-//            InboxView()
-//            VStack {
-//                HStack{
-//                    Image(systemName: "line.3.horizontal")
-//                        .imageScale(.large)
-//                    //.foregroundStyle(.tint)
-//                    Spacer()
-//                }
-//                Text("")
-//                Text("")
-//                Text("")
-//                Text("")
-//                HStack{
-//                    Image(systemName: "tray.fill")
-//                    Text("Inbox")
-//                    Spacer()
-//                }
-//                Text("")
-//                HStack{
-//                    Image(systemName: "chart.pie.fill")
-//                    Text("Dashboard")
-//                    Spacer()
-//                }
-//                Text("")
-//                HStack{
-//                    Image(systemName: "gear")
-//                    Text("Settings")
-//                    Spacer()
-//                }
-//                Spacer()
-//            }
-//            .padding()
-//            .background(
-//                Rectangle()
-//                    .fill(Color.white)
-//                    .frame(width: 250, height: 1000)
-//                    .padding(-200)
-//            )
-//        }
-//    }
-//}
-
 import SwiftUI
  
 struct SideBarView: View {
@@ -77,6 +30,11 @@ struct SideBarView: View {
                 // Nav items
                 SideBarItem(icon: "tray.fill", label: "Inbox", isActive: currentTab == .inbox) {
                     currentTab = .inbox
+                    withAnimation(.easeInOut) { showSidebar = false }
+                }
+                
+                SideBarItem(icon: "arrow.right", label: "Sent", isActive: currentTab == .sent) {
+                    currentTab = .sent
                     withAnimation(.easeInOut) { showSidebar = false }
                 }
                 

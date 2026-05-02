@@ -8,6 +8,7 @@
 import Foundation
 import CoreML
 import NaturalLanguage
+import CreateML
 
 struct EmailLoader {
 

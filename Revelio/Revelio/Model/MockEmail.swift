@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct MockEmail: Identifiable {
+struct MockEmail: Identifiable, Codable, Equatable {
     let id: UUID = UUID()
     let senderName: String
     let senderEmail: String
@@ -18,6 +18,10 @@ struct MockEmail: Identifiable {
     let isPhishing: Bool
     let links: [String]
     let attachments: [String]
+//    let userCorrection: Bool?
+//    var effectiveIsPhishing: Bool {
+//        return userCorrection ?? isPhishing
+//    }
 }
 
 extension MockEmail {
