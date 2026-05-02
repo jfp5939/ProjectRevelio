@@ -243,7 +243,7 @@ struct SettingsView: View {
                 try classifier.write(to: modelURL)
 
                 // Compile the model
-                let compiledURL = try MLModel.compileModel(at: modelURL)
+                let compiledURL = try await MLModel.compileModel(at: modelURL)
 
                 // Move compiled model to permanent location
                 let permanentURL = documentsURL.appendingPathComponent("MyTextClassifier_v\(newVersion).mlmodelc")

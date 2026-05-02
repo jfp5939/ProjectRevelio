@@ -8,13 +8,26 @@
 import Foundation
 import CoreML
 import NaturalLanguage
-import CreateML
 
 struct EmailLoader {
 
+    // MARK: - Custom Model Path
+    // After retraining, the new model is saved to documents directory
+    // This checks if a retrained model exists and returns its URL
+    static var customModelURL: URL? {
+        guard let path = UserDefaults.standard.string(forKey: "customModelPath") else {
+            return nil
+        }
+        let url = URL(fileURLWithPath: path)
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            return nil
+        }
+        return url
+    }
+
+    // MARK: - Sender Parser
     // Parses sender string "Name <email@domain.com>" into (name, email, initial)
     static func parseSender(_ sender: String) -> (name: String, email: String, initial: String) {
-        // Try to split "Name <email>" format
         if let openBracket = sender.firstIndex(of: "<"),
            let closeBracket = sender.firstIndex(of: ">") {
             let nameUntrimmed = String(sender[sender.startIndex..<openBracket]).trimmingCharacters(in: .whitespaces)
@@ -23,26 +36,40 @@ struct EmailLoader {
             let initial = String(name.prefix(1)).uppercased()
             return (name.isEmpty ? email : name, email, initial.isEmpty ? "?" : initial)
         }
-        // No brackets — the whole string is just an email
         let initial = String(sender.prefix(1)).uppercased()
         return (sender, sender, initial.isEmpty ? "?" : initial)
     }
 
-    // Classifies a single email's text using CoreML
-    // Returns true if phishing (label "1"), false if benign (label "0")
-    static func classify(subject: String, body: String) -> Bool {
+    // MARK: - Classifier
+    // First tries custom retrained model if available
+    // Falls back to bundled MyTextClassifier_1 if not
+    static nonisolated func classify(subject: String, body: String) -> Bool {
         let text = subject + " " + body
         do {
+            // Try custom retrained model first
+            if let customURL = customModelURL {
+                let compiledModel = try MLModel(contentsOf: customURL)
+                let input = try MLDictionaryFeatureProvider(
+                    dictionary: ["text": text as NSString]
+                )
+                let output = try compiledModel.prediction(from: input)
+                if let label = output.featureValue(for: "label")?.stringValue {
+                    return label == "1"
+                }
+            }
+
+            // Fall back to bundled model
             let model = try MyTextClassifier_1(configuration: MLModelConfiguration())
             let prediction = try model.prediction(text: text)
             return prediction.label == "1"
+
         } catch {
             print("Classification error: \(error)")
-            // Default to phishing on error — safer for a security app
             return true
         }
     }
 
+    // MARK: - Email Loader
     // Loads emails.json from the app bundle and returns [MockEmail]
     static func loadEmails() -> [MockEmail] {
         guard let url = Bundle.main.url(forResource: "emails", withExtension: "json") else {
@@ -61,26 +88,16 @@ struct EmailLoader {
         }
 
         return rawEmails.compactMap { dict -> MockEmail? in
-            // Pull fields from JSON
             guard let senderRaw = dict["sender"] as? String,
                   let subject = dict["subject"] as? String,
                   let body = dict["body"] as? String else {
                 return nil
             }
 
-            let receiver = dict["receiver"] as? String ?? ""
             let date = dict["date"] as? String ?? ""
-
-            // Parse urls — stored as 0 or 1 in dataset
-            let hasUrls = (dict["urls"] as? Int ?? 0) == 1
-
-            // Parse sender
             let (name, email, initial) = parseSender(senderRaw)
-
-            // Classify using CoreML
             let isPhishing = classify(subject: subject, body: body)
 
-            // Extract a simple time string from date if available
             let time: String = {
                 let parts = date.components(separatedBy: " ")
                 if parts.count >= 5 {
@@ -103,7 +120,8 @@ struct EmailLoader {
                 time: time,
                 isPhishing: isPhishing,
                 links: dict["links"] as? [String] ?? [],
-                attachments: dict["attachments"] as? [String] ?? []
+                attachments: dict["attachments"] as? [String] ?? [],
+                userCorrection: nil
             )
         }
     }

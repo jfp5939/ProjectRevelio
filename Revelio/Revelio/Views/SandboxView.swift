@@ -237,8 +237,10 @@ struct SandboxView: View {
     //@State private var selectedURL: String = ""
     @State private var selectedAssetName: String? = nil
     @State private var selectedURL: String? = nil
+    @State private var localCorrection: Bool? = nil
 
     let email: MockEmail
+    let onCorrection: ((Bool) -> Void)?
 
     var body: some View {
         
@@ -261,7 +263,7 @@ struct SandboxView: View {
                     SandboxCard {
                         VStack(alignment: .leading, spacing: 10) {
                             SandboxCardHeader(icon: "envelope.fill", title: "Email Details")
-                            SandboxDetailRow(label: "From", value: email.senderEmail, valueColor: email.isPhishing ? .red : .black)
+                            SandboxDetailRow(label: "From", value: email.senderEmail, valueColor: email.effectiveIsPhishing ? .red : .black)
                             Divider()
                             SandboxDetailRow(label: "To", value: "your@email.com")
                             Divider()
@@ -272,12 +274,12 @@ struct SandboxView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Text(email.isPhishing ? "unsafe" : "safe")
+                                Text(email.effectiveIsPhishing ? "unsafe" : "safe")
                                     .font(.caption.bold())
                                     .foregroundColor(.white)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 4)
-                                    .background(Capsule().fill(email.isPhishing ? Color.red.opacity(0.8) : Color.green.opacity(0.8)))
+                                    .background(Capsule().fill(email.effectiveIsPhishing ? Color.red.opacity(0.8) : Color.green.opacity(0.8)))
                             }
                         }
                     }
@@ -343,6 +345,68 @@ struct SandboxView: View {
                         }
                     }
 
+                    // User Correction Card
+                    SandboxCard {
+                        VStack(alignment: .leading, spacing: 10) {
+                            SandboxCardHeader(icon: "person.fill.checkmark", title: "Correct Classification")
+                            
+                            Text("Is the ML classification wrong? Let us know to improve the model.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            HStack(spacing: 12) {
+                                // Mark as Safe button
+                                Button {
+                                    localCorrection = false
+                                    onCorrection?(false)
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: localCorrection == false ? "checkmark.circle.fill" : "checkmark.circle")
+                                        Text("Mark as Safe")
+                                            .font(.subheadline.bold())
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(localCorrection == false ? Color.green : Color.green.opacity(0.4))
+                                    )
+                                }
+                                
+                                // Mark as Unsafe button
+                                Button {
+                                    localCorrection = true
+                                    onCorrection?(true)
+                                } label: {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: localCorrection == true ? "xmark.circle.fill" : "xmark.circle")
+                                        Text("Mark as Unsafe")
+                                            .font(.subheadline.bold())
+                                    }
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(10)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(localCorrection == true ? Color.red : Color.red.opacity(0.4))
+                                    )
+                                }
+                            }
+                            
+                            if localCorrection != nil {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.caption)
+                                        .foregroundColor(.teal)
+                                    Text("Correction saved — will be used in next retrain")
+                                        .font(.caption)
+                                        .foregroundColor(.teal)
+                                }
+                            }
+                        }
+                    }
+                    
                     // Risk Breakdown Button
                     Button {
                         showRiskBreakdown = true
@@ -374,6 +438,9 @@ struct SandboxView: View {
         }
         .sheet(item: $selectedAssetName) { name in
             AttachmentPreviewSheet(assetName: name)
+        }
+        .onAppear {
+            localCorrection = email.userCorrection
         }
     }
 }
@@ -433,9 +500,7 @@ struct SandboxDetailRow: View {
     }
 }
 
-#Preview {
-    SandboxView(email: MockEmail.samples[0])
-}
+
 
 extension String: @retroactive Identifiable {
     public var id: String { self }

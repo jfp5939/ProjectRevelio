@@ -23,7 +23,7 @@ struct RiskAnalyzer {
         let domain = email.senderEmail.components(separatedBy: "@").last ?? ""
         let suspiciousDigits = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"]
 
-        if email.isPhishing {
+        if email.effectiveIsPhishing {
             // Urgency keywords
             for s in urgencyWords {
                 if email.subject.lowercased().contains(s) || email.body.lowercased().contains(s) {
@@ -133,7 +133,7 @@ struct RiskBreakdownSheet: View {
                         icon: signal.icon,
                         label: signal.label,
                         detail: signal.detail,
-                        isPhishing: email.isPhishing
+                        isPhishing: email.effectiveIsPhishing
                     )
                 }
             }

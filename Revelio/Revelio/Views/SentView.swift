@@ -112,7 +112,7 @@ struct SentView: View {
                             .padding(.top, 60)
                         } else {
                             ForEach(filteredSentEmails) { email in
-                                NavigationLink(destination: EmailDetailView(email: email)) {
+                                NavigationLink(destination: EmailDetailView(email: email, onCorrection: nil)) {
                                     SentEmailRowView(email: email)
                                 }
                                 .buttonStyle(.plain)
@@ -136,8 +136,8 @@ struct SentEmailRowView: View {
     let email: MockEmail
     @State private var showRiskBreakdown: Bool = false
 
-    var accentColor: Color { email.isPhishing ? .red : .green }
-    var label: String { email.isPhishing ? "unsafe" : "safe" }
+    var accentColor: Color { email.effectiveIsPhishing ? .red : .green }
+    var label: String { email.effectiveIsPhishing ? "unsafe" : "safe" }
 
     var body: some View {
         ZStack(alignment: .topLeading) {

@@ -18,10 +18,10 @@ struct MockEmail: Identifiable, Codable, Equatable {
     let isPhishing: Bool
     let links: [String]
     let attachments: [String]
-//    let userCorrection: Bool?
-//    var effectiveIsPhishing: Bool {
-//        return userCorrection ?? isPhishing
-//    }
+    var userCorrection: Bool?
+    var effectiveIsPhishing: Bool {
+        return userCorrection ?? isPhishing
+    }
 }
 
 extension MockEmail {
@@ -43,7 +43,8 @@ extension MockEmail {
             time: "18:10",
             isPhishing: true,
             links: ["http://paypa1-verify.com/login"],
-            attachments: ["invoice.exe"]
+            attachments: ["invoice.exe"],
+            userCorrection: nil
         ),
         MockEmail(
             senderName: "Jane Smith",
@@ -54,7 +55,8 @@ extension MockEmail {
             time: "11:11",
             isPhishing: false,
             links: [],
-            attachments: []
+            attachments: [],
+            userCorrection: nil
         )
     ]
 }

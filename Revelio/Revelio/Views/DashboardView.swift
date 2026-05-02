@@ -59,7 +59,7 @@ struct DashboardView: View {
             // time format is "08 Aug 18:45" — day is parts[0], month is parts[1]
             let day = parts.count >= 2 ? "\(parts[0]) \(parts[1])" : email.time
             var current = grouped[day] ?? (phishing: 0, benign: 0)
-            if email.isPhishing {
+            if email.effectiveIsPhishing {
                 current.phishing += 1
             } else {
                 current.benign += 1

@@ -31,8 +31,8 @@ struct InboxView: View {
             let matchesFilter: Bool
             switch filterOption {
             case .all:    matchesFilter = true
-            case .safe:   matchesFilter = !email.isPhishing
-            case .unsafe: matchesFilter = email.isPhishing
+            case .safe:   matchesFilter = !email.effectiveIsPhishing
+            case .unsafe: matchesFilter = email.effectiveIsPhishing
             }
 
             // Apply search query
@@ -159,7 +159,14 @@ struct InboxView: View {
                                     .padding(.top, 60)
                         } else {
                             ForEach(filteredEmails) { email in
-                                NavigationLink(destination: EmailDetailView(email: email)) {
+                                NavigationLink(destination: EmailDetailView(
+                                    email: email,
+                                    onCorrection: { correction in
+                                        if let index = emails.firstIndex(where: { $0.id == email.id }) {
+                                            emails[index].userCorrection = correction
+                                        }
+                                    }
+                                )) {
                                     EmailRowView(email: email)
                                 }
                                 .buttonStyle(.plain)
@@ -209,8 +216,8 @@ struct EmailRowView: View {
     let email: MockEmail
     @State private var showRiskBreakdown: Bool = false
 
-    var accentColor: Color { email.isPhishing ? .red : .green }
-    var label: String { email.isPhishing ? "unsafe" : "safe" }
+    var accentColor: Color { email.effectiveIsPhishing ? .red : .green }
+    var label: String { email.effectiveIsPhishing ? "unsafe" : "safe" }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -276,7 +283,7 @@ struct EmailRowView: View {
                         }
 
                         // Open in Sandbox
-                        NavigationLink(destination: SandboxView(email: email)) {
+                        NavigationLink(destination: SandboxView(email: email, onCorrection: nil)) {
                             Image(systemName: "lock.square")
                                 .font(.title3)
                                 .foregroundColor(.white)

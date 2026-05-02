@@ -8,10 +8,11 @@ import SwiftUI
 
 struct EmailDetailView: View {
     let email: MockEmail
+    let onCorrection: ((Bool) -> Void)?
     @State private var showRiskBreakdown = false
     @State private var selectedAssetName: String? = nil
 
-    var accentColor: Color { email.isPhishing ? .red : .green }
+    var accentColor: Color { email.effectiveIsPhishing ? .red : .green }
 
     var body: some View {
         ZStack {
@@ -50,7 +51,7 @@ struct EmailDetailView: View {
 
                             Spacer()
 
-                            Text(email.isPhishing ? "unsafe" : "safe")
+                            Text(email.effectiveIsPhishing ? "unsafe" : "safe")
                                 .font(.caption.bold())
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 10)
@@ -86,7 +87,7 @@ struct EmailDetailView: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 SandboxCardHeader(icon: "link", title: "Links")
 
-                                if email.isPhishing {
+                                if email.effectiveIsPhishing {
                                     HStack(spacing: 6) {
                                         Image(systemName: "exclamationmark.triangle.fill")
                                             .font(.caption)
@@ -130,7 +131,7 @@ struct EmailDetailView: View {
                             VStack(alignment: .leading, spacing: 10) {
                                 SandboxCardHeader(icon: "paperclip", title: "Attachments")
 
-                                if email.isPhishing {
+                                if email.effectiveIsPhishing {
                                     HStack(spacing: 6) {
                                         Image(systemName: "exclamationmark.triangle.fill")
                                             .font(.caption)
@@ -202,7 +203,7 @@ struct EmailDetailView: View {
                             )
                         }
 
-                        NavigationLink(destination: SandboxView(email: email)) {
+                        NavigationLink(destination: SandboxView(email: email, onCorrection: onCorrection)) {
                             HStack(spacing: 6) {
                                 Text("Sandbox")
                                     .font(.subheadline.bold())
@@ -235,6 +236,3 @@ struct EmailDetailView: View {
     }
 }
 
-#Preview {
-    EmailDetailView(email: MockEmail.samples[0])
-}
