@@ -14,6 +14,7 @@ struct EmailLoader {
     // MARK: - Custom Model Path
     // After retraining, the new model is saved to documents directory
     // This checks if a retrained model exists and returns its URL
+    @MainActor
     static var customModelURL: URL? {
         guard let path = UserDefaults.standard.string(forKey: "customModelPath") else {
             return nil
@@ -43,7 +44,8 @@ struct EmailLoader {
     // MARK: - Classifier
     // First tries custom retrained model if available
     // Falls back to bundled MyTextClassifier_1 if not
-    static nonisolated func classify(subject: String, body: String) -> Bool {
+    @MainActor
+    static func classify(subject: String, body: String) -> Bool {
         let text = subject + " " + body
         do {
             // Try custom retrained model first
@@ -71,6 +73,7 @@ struct EmailLoader {
 
     // MARK: - Email Loader
     // Loads emails.json from the app bundle and returns [MockEmail]
+    @MainActor
     static func loadEmails() -> [MockEmail] {
         guard let url = Bundle.main.url(forResource: "emails", withExtension: "json") else {
             print("emails.json not found in bundle")

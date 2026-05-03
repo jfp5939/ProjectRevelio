@@ -15,9 +15,7 @@ struct MainView: View {
     @State private var currentTab: AppTab = .inbox
     @State private var showSidebar: Bool = false
     @State private var sentEmails: [MockEmail] = []
-    //let emails: [MockEmail]
     @State private var emails: [MockEmail] = []
-    //@Binding var emails: [MockEmail]
     
     func loadInboxEmails() -> [MockEmail] {
         guard let data = UserDefaults.standard.data(forKey: "inboxEmails"),
@@ -49,8 +47,6 @@ struct MainView: View {
     var body: some View {
         ZStack(alignment: .leading) {
  
-            //showSidebar: $showSidebar
-            // Main content — swaps based on active tab
             Group {
                 switch currentTab {
                 case .inbox:
@@ -64,7 +60,7 @@ struct MainView: View {
                 }
             }
             
-            // Sidebar overlay — only rendered when open
+            // Sidebar overlay
             if showSidebar {
                 // Dim background tap to close
                 Color.black.opacity(0.3)
@@ -87,7 +83,7 @@ struct MainView: View {
                 emails = saved
             } else {
                 let loaded = await Task.detached(priority: .userInitiated) {
-                    EmailLoader.loadEmails()
+                    await MainActor.run { EmailLoader.loadEmails() }
                 }.value
                 if !loaded.isEmpty {
                     emails = loaded
@@ -105,9 +101,4 @@ struct MainView: View {
             saveSentEmails(sentEmails)
         }
     }
-}
- 
-
-#Preview {
-    //MainView()
 }

@@ -56,7 +56,7 @@ struct DashboardView: View {
         var grouped: [String: (phishing: Int, benign: Int)] = [:]
         for email in emails {
             let parts = email.time.components(separatedBy: " ")
-            // time format is "08 Aug 18:45" — day is parts[0], month is parts[1]
+            // time format is "08 Aug 18:45" so day is parts[0], month is parts[1]
             let day = parts.count >= 2 ? "\(parts[0]) \(parts[1])" : email.time
             var current = grouped[day] ?? (phishing: 0, benign: 0)
             if email.effectiveIsPhishing {
@@ -227,19 +227,6 @@ struct DashboardView: View {
                                             .padding(.horizontal, 8)
                                             .padding(.vertical, 8)
 
-//                                            // Legend
-//                                            HStack(spacing: 16) {
-//                                                HStack(spacing: 4) {
-//                                                    Circle().fill(.red).frame(width: 8, height: 8)
-//                                                    Text("Phishing").font(.caption2).foregroundColor(.secondary)
-//                                                }
-//                                                HStack(spacing: 4) {
-//                                                    Circle().fill(.green).frame(width: 8, height: 8)
-//                                                    Text("Benign").font(.caption2).foregroundColor(.secondary)
-//                                                }
-//                                            }
-//                                            .padding(.leading, 12)
-//                                            .padding(.bottom, 8)
                                         }
                                     }
                                 }

@@ -31,7 +31,6 @@ struct SettingsView: View {
         let allEmails = emails + sentEmails
         for email in allEmails {
             let text = email.subject + " " + email.body
-            // userCorrection overrides ML label for training
             let label = (email.userCorrection ?? email.isPhishing) ? "1" : "0"
             data.append((text: text, label: label))
         }
@@ -195,6 +194,10 @@ struct SettingsView: View {
             return
         }
 
+        // Capture main-actor-isolated values before entering detached task
+        let capturedData = trainingData
+        let currentVersion = modelVersion
+
         isRetraining = true
         retrainSuccess = false
         retrainError = false
@@ -202,11 +205,10 @@ struct SettingsView: View {
 
         Task.detached(priority: .userInitiated) {
             do {
-                // Build MLDataTable
                 await MainActor.run { retrainMessage = "Building training table..." }
 
-                let texts = trainingData.map { $0.text }
-                let labels = trainingData.map { $0.label }
+                let texts = capturedData.map { $0.text }
+                let labels = capturedData.map { $0.label }
 
                 let table = try MLDataTable(dictionary: [
                     "text": texts,
@@ -215,10 +217,11 @@ struct SettingsView: View {
 
                 await MainActor.run { retrainMessage = "Training model..." }
 
-                // Split 80/20
-                let (trainTable, testTable) = table.randomSplit(by: 0.8, seed: 42)
+                let (trainTable, _) = table.randomSplit(by: 0.8, seed: 42)
+                
+                // MLDataTable is deprecated in iOS 16+ but MLTextClassifier does not yet
+                // fully support DataFrame — keeping MLDataTable until CreateML API is updated
 
-                // Train
                 let classifier = try MLTextClassifier(
                     trainingData: trainTable,
                     textColumn: "text",
@@ -227,7 +230,6 @@ struct SettingsView: View {
 
                 await MainActor.run { retrainMessage = "Evaluating model..." }
 
-                // Evaluate
                 let trainMetrics = classifier.trainingMetrics
                 let validMetrics = classifier.validationMetrics
                 let trainAcc = String(format: "%.1f%%", (1.0 - trainMetrics.classificationError) * 100)
@@ -235,31 +237,27 @@ struct SettingsView: View {
 
                 await MainActor.run { retrainMessage = "Saving model..." }
 
-                // Save to documents directory
                 let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-                let newVersion = modelVersion + 1
+                let newVersion = currentVersion + 1
                 let modelURL = documentsURL.appendingPathComponent("MyTextClassifier_v\(newVersion).mlmodel")
 
                 try classifier.write(to: modelURL)
 
-                // Compile the model
                 let compiledURL = try await MLModel.compileModel(at: modelURL)
 
-                // Move compiled model to permanent location
                 let permanentURL = documentsURL.appendingPathComponent("MyTextClassifier_v\(newVersion).mlmodelc")
                 if FileManager.default.fileExists(atPath: permanentURL.path) {
                     try FileManager.default.removeItem(at: permanentURL)
                 }
                 try FileManager.default.moveItem(at: compiledURL, to: permanentURL)
 
-                // Update stored model path and info
                 UserDefaults.standard.set(permanentURL.path, forKey: "customModelPath")
 
                 await MainActor.run {
                     modelVersion = newVersion
                     trainingAccuracy = trainAcc
                     validationAccuracy = validAcc
-                    trainingDataSize = "\(trainingData.count) emails"
+                    trainingDataSize = "\(capturedData.count) emails"
                     isRetraining = false
                     retrainSuccess = true
                     retrainMessage = ""

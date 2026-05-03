@@ -71,10 +71,6 @@ struct AttachmentPreviewSheet: View {
     var body: some View {
         NavigationStack {
             VStack {
-//                Image("friday_lunch_spots")
-//                    .resizable()
-//                    .scaledToFit()
-//                    .padding()
                 if UIImage(named: assetName) != nil {
                     Image(assetName)
                         .resizable()
@@ -232,9 +228,7 @@ struct AttachmentRow: View {
 struct SandboxView: View {
     
     @State private var showRiskBreakdown = false
-    //@State private var showWebSheet = false
     @State private var showAttachmentSheet = false
-    //@State private var selectedURL: String = ""
     @State private var selectedAssetName: String? = nil
     @State private var selectedURL: String? = nil
     @State private var localCorrection: Bool? = nil
@@ -313,7 +307,6 @@ struct SandboxView: View {
                                         Spacer()
                                         Button {
                                             selectedURL = link
-                                            //showWebSheet = true
                                         } label: {
                                             Text("Open safely")
                                                 .font(.caption.bold())

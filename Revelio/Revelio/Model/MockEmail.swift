@@ -8,7 +8,7 @@
 import Foundation
 
 struct MockEmail: Identifiable, Codable, Equatable {
-    let id: UUID = UUID()
+    var id: UUID = UUID()
     let senderName: String
     let senderEmail: String
     let senderInitial: String

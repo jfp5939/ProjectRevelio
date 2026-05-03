@@ -81,7 +81,7 @@ struct EmailDetailView: View {
                         }
                     }
 
-                    // Links Card — interactive, opens in Safari
+                    // Links Card opens in browser
                     if !email.links.isEmpty {
                         SandboxCard {
                             VStack(alignment: .leading, spacing: 10) {
@@ -125,7 +125,7 @@ struct EmailDetailView: View {
                         }
                     }
 
-                    // Attachments Card — interactive, preview available
+                    // Attachments Card preview available
                     if !email.attachments.isEmpty {
                         SandboxCard {
                             VStack(alignment: .leading, spacing: 10) {

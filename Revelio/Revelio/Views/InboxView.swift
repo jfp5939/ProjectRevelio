@@ -19,11 +19,8 @@ struct InboxView: View {
     @State private var searchQuery: String = ""
     @State private var showSearch: Bool = false
     @FocusState private var searchFocused: Bool
-    //@State private var emails: [MockEmail] = []
     @Binding var emails: [MockEmail]
     @Binding var sentEmails: [MockEmail]
-    // Swap MockEmail.samples for @Query when SwiftData is ready
-    //let emails: [MockEmail] = MockEmail.samples
 
     var filteredEmails: [MockEmail] {
         emails.filter { email in
@@ -146,15 +143,6 @@ struct InboxView: View {
 
                         // Email list
                         if filteredEmails.isEmpty {
-//                            VStack(spacing: 8) {
-//                                Image(systemName: "tray")
-//                                    .font(.system(size: 40))
-//                                    .foregroundColor(.secondary)
-//                                Text("No emails found")
-//                                    .font(.subheadline)
-//                                    .foregroundColor(.secondary)
-//                            }
-//                            .padding(.top, 60)
                             ProgressView("Loading emails...")
                                     .padding(.top, 60)
                         } else {
@@ -189,23 +177,6 @@ struct InboxView: View {
                 Button("Unsafe") { filterOption = .unsafe }
                 Button("Cancel", role: .cancel) {}
             }
-//            .onAppear {
-//                Task {
-//                    let loaded = await Task.detached(priority: .userInitiated) {
-//                        EmailLoader.loadEmails()
-//                    }.value
-//                    
-//                    let allEmails = loaded.isEmpty ? MockEmail.samples : loaded
-//                    
-//                    // Guarantee at least 1 safe and 1 unsafe
-//                    let phishing = allEmails.filter { $0.isPhishing }.shuffled()
-//                    let benign = allEmails.filter { !$0.isPhishing }.shuffled()
-//                    
-//                    // Take up to 10 from each, then mix and shuffle
-//                    let combined = Array(phishing.prefix(10) + benign.prefix(10))
-//                    emails = combined.shuffled().prefix(20).map { $0 }
-//                }
-//            }
         }
         .navigationBarBackButtonHidden(true)
     }

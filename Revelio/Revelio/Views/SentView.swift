@@ -190,7 +190,7 @@ struct SentEmailRowView: View {
 
                     Spacer()
 
-                    // Risk breakdown only — no sandbox
+                    // Risk breakdown only, no sandbox
                     Button {
                         showRiskBreakdown = true
                     } label: {

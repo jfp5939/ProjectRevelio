@@ -52,13 +52,12 @@ struct SideBarView: View {
             }
             .padding(24)
             .frame(width: 220)
-            //.frame(maxHeight: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 20)
                     .fill(.white)
                     .shadow(color: .black.opacity(0.12), radius: 12, x: 4, y: 0)
             )
-            .padding(.top, 60)   // push down from top safe area
+            .padding(.top, 60)
             .padding(.leading, 0)
         }
     }
@@ -86,7 +85,3 @@ struct SideBarItem: View {
         Divider()
     }
 }
-
-//#Preview {
-//    SideBarView()
-//}
